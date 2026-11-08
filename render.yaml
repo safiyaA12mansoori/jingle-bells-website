@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: jingle-bells-website
+    runtime: static
+    buildCommand: echo "Static HTML site"
+    staticPublishPath: .
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=604800

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-label="Jingle Bell's school logo">
+  <circle cx="40" cy="40" r="38" fill="#4F9B35"/>
+  <circle cx="40" cy="40" r="31.5" fill="#FFFDF9"/>
+  <path d="M40 12.5c-2.4 0-4.3 1.7-4.6 4h-1.2c-1.1 0-1.8.9-1.6 1.9l.5 2.1C25.8 22.6 21 29.4 21 38.2c0 8.4 4.2 14.2 6.2 16.8h25.6c2-2.6 6.2-8.4 6.2-16.8 0-8.8-4.8-15.6-12.1-17.7l.5-2.1c.2-1-.5-1.9-1.6-1.9h-1.2c-.3-2.3-2.2-4-4.6-4z" fill="#E7B936"/>
+  <path d="M28 55h24c0 6.2-5.4 11-12 11s-12-4.8-12-11z" fill="#E7B936"/>
+  <ellipse cx="40" cy="20.5" rx="4.2" ry="3.2" fill="#4F9B35"/>
+  <circle cx="40" cy="62" r="5.2" fill="#B51F2B"/>
+  <circle cx="34" cy="34" r="3.2" fill="#FFFDF9" opacity=".55"/>
+</svg>
