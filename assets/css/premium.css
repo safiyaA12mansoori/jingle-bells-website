@@ -220,26 +220,28 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.32em 0.38em;
+  gap: 0;
   opacity: 1;
   transition: opacity 0.4s var(--ease);
 }
 .moments-line:not(.is-on) {
   opacity: 0;
 }
-.moments-word {
+.moments-letter {
   display: inline-block;
   opacity: 0;
-  transform: translateY(10px);
+  transform: scale(0.35) translateY(8px);
 }
-.moments-word.is-in {
-  opacity: 1;
-  transform: none;
-  animation: momentWordIn 0.38s var(--ease);
+.moments-letter.is-in {
+  animation: momentPop 0.36s var(--ease) forwards;
+}
+.moments-space {
+  width: 0.28em;
 }
 .moments-caret {
   width: 3px;
   height: 0.85em;
+  margin-left: 2px;
   border-radius: 2px;
   background: var(--sun);
   animation: momentCaret 0.9s step-end infinite;
@@ -248,9 +250,10 @@
   color: var(--sun);
   text-shadow: 0 0 24px rgba(255, 209, 102, 0.45);
 }
-@keyframes momentWordIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
+@keyframes momentPop {
+  0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+  68% { opacity: 1; transform: scale(1.22) translateY(-3px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes momentCaret {
   50% { opacity: 0; }
@@ -325,10 +328,29 @@
   color: rgba(255,255,255,0.9);
 }
 
+.letter-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.letter-pop {
+  display: inline-block;
+  opacity: 0;
+  transform: scale(0.35) translateY(8px);
+}
+.is-letters-on .letter-pop {
+  animation: momentPop 0.36s var(--ease) forwards;
+  animation-delay: calc(var(--i, 0) * 48ms);
+}
+.letter-space {
+  display: inline-block;
+  width: 0.28em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .moments-line { opacity: 1 !important; transform: none !important; }
-  .moments-word,
-  .moments-word.is-in { opacity: 1 !important; transform: none !important; animation: none !important; }
+  .moments-letter,
+  .moments-letter.is-in,
+  .letter-pop { opacity: 1 !important; transform: none !important; animation: none !important; }
   .moments-caret { animation: none !important; }
   .hero-float, .hero-rainbow { animation: none !important; }
 }

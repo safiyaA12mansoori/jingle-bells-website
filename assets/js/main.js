@@ -24,6 +24,104 @@
     window.setTimeout(hidePreloader, 1200);
   }
 
+  const LETTER_SELECTOR = [
+    "h1",
+    "h2",
+    "h3",
+    ".nav-link",
+    ".btn",
+    ".section-kicker",
+    ".hero-kicker",
+    ".hero-lead",
+    ".hero-copy",
+    ".brand-text strong",
+    ".brand-text small",
+    ".footer-links a",
+    ".site-footer strong",
+    ".site-footer p",
+    ".feature-tile h3",
+    ".feature-tile strong",
+    ".activity-tile h3",
+    ".class-fun-card h3",
+    ".class-fun-card .age",
+    ".event-mosaic h3",
+    ".filter-btn",
+    ".motto-chip",
+    ".info-tile h2",
+    ".page-hero p",
+    ".course-heading",
+    ".course-sub"
+  ].join(",");
+
+  const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "SVG", "IMG", "I", "BR", "INPUT", "TEXTAREA", "SELECT", "HR"]);
+
+  const wrapLetters = (el) => {
+    if (!el || el.dataset.letters === "on") return;
+    if (el.closest(".moments-line, .preloader, .learn-board, .lightbox, .navbar-toggler")) return;
+    el.dataset.letters = "on";
+    let i = 0;
+    const process = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const raw = node.textContent;
+        if (!raw || !raw.trim()) return;
+        const frag = document.createDocumentFragment();
+        let word = document.createElement("span");
+        word.className = "letter-word";
+        const flushWord = () => {
+          if (word.childNodes.length) {
+            frag.appendChild(word);
+            word = document.createElement("span");
+            word.className = "letter-word";
+          }
+        };
+        for (const ch of raw) {
+          if (ch === " " || ch === "\n" || ch === "\t") {
+            flushWord();
+            const space = document.createElement("span");
+            space.className = "letter-space";
+            space.textContent = " ";
+            frag.appendChild(space);
+          } else {
+            const span = document.createElement("span");
+            span.className = "letter-pop";
+            span.textContent = ch;
+            span.style.setProperty("--i", String(i));
+            i += 1;
+            word.appendChild(span);
+          }
+        }
+        flushWord();
+        node.parentNode.replaceChild(frag, node);
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (SKIP_TAGS.has(node.tagName) || node.classList.contains("letter-pop")) return;
+        [...node.childNodes].forEach(process);
+      }
+    };
+    [...el.childNodes].forEach(process);
+  };
+
+  const letterIo = reduceMotion
+    ? null
+    : new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-letters-on");
+          letterIo.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
+    );
+
+  const applyLetterPop = (root = document) => {
+    if (reduceMotion) return;
+    root.querySelectorAll(LETTER_SELECTOR).forEach((el) => {
+      wrapLetters(el);
+      if (letterIo) letterIo.observe(el);
+      else el.classList.add("is-letters-on");
+    });
+  };
+
   const header = document.querySelector(".site-header");
   const onScroll = () => {
     if (!header) return;
@@ -252,30 +350,23 @@
       timer = window.setTimeout(fn, ms);
     };
 
-    const paintLine = (text, revealCount) => {
-      const words = text.split(/\s+/).filter(Boolean);
-      moments.replaceChildren();
-      words.forEach((word, idx) => {
-        const span = document.createElement("span");
-        span.className = "moments-word" + (idx < revealCount ? " is-in" : "");
-        span.textContent = word;
-        moments.appendChild(span);
-      });
+    const addCaret = () => {
       const caret = document.createElement("span");
       caret.className = "moments-caret";
       caret.setAttribute("aria-hidden", "true");
       moments.appendChild(caret);
+      return caret;
     };
 
     const playLine = () => {
       if (!lines.length) return;
       const text = lines[lineIndex];
-      const words = text.split(/\s+/).filter(Boolean);
-      moments.classList.toggle("is-final", lineIndex === lines.length - 1);
+      moments.replaceChildren();
       moments.classList.add("is-on");
+      moments.classList.toggle("is-final", lineIndex === lines.length - 1);
 
       if (reduceMotion) {
-        paintLine(text, words.length);
+        moments.textContent = text;
         later(() => {
           lineIndex = (lineIndex + 1) % lines.length;
           playLine();
@@ -283,24 +374,34 @@
         return;
       }
 
-      let shown = 0;
+      const caret = addCaret();
+      const chars = Array.from(text);
+      let i = 0;
       const tick = () => {
-        shown += 1;
-        paintLine(text, shown);
-        if (shown < words.length) {
-          later(tick, 320);
+        const ch = chars[i];
+        const span = document.createElement("span");
+        if (ch === " ") {
+          span.className = "moments-space";
+          span.innerHTML = "&nbsp;";
+        } else {
+          span.className = "moments-letter is-in";
+          span.textContent = ch;
+        }
+        moments.insertBefore(span, caret);
+        i += 1;
+        if (i < chars.length) {
+          later(tick, ch === " " ? 90 : 70);
         } else {
           later(() => {
             moments.classList.remove("is-on");
             later(() => {
               lineIndex = (lineIndex + 1) % lines.length;
               playLine();
-            }, 420);
-          }, 1600);
+            }, 380);
+          }, 1500);
         }
       };
-      paintLine(text, 0);
-      later(tick, 80);
+      later(tick, 60);
     };
 
     playLine();
@@ -336,7 +437,10 @@
           </div>`;
         }).join("");
     };
-    filters.forEach((btn) => btn.addEventListener("click", () => render(btn.dataset.eventFilter)));
+    filters.forEach((btn) => btn.addEventListener("click", () => {
+      render(btn.dataset.eventFilter);
+      applyLetterPop(eventGrid);
+    }));
     render("all");
   }
 
@@ -395,4 +499,11 @@
     });
     load("abc");
   }
+
+  window.setTimeout(() => applyLetterPop(), reduceMotion ? 0 : 420);
+  window.setTimeout(() => {
+    document.querySelectorAll("[data-letters='on']:not(.is-letters-on)").forEach((el) => {
+      el.classList.add("is-letters-on");
+    });
+  }, 2800);
 })();
