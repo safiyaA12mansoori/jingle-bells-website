@@ -1,22 +1,29 @@
 :root {
-  --green: #60a830;
-  --green-dark: #4a8c22;
-  --green-soft: #e8f6dc;
-  --red: #c02424;
-  --red-soft: #f8e4e4;
-  --gold: #f0a824;
-  --gold-soft: #fff4d4;
-  --cream: #fff8f0;
-  --ink: #2a261e;
-  --muted: #6d6558;
+  --sky: #77c9f2;
+  --sun: #ffd166;
+  --pink: #f6a8c8;
+  --mint: #a8ddba;
+  --lavender: #b7a0ed;
+  --cream: #fff8ed;
+  --navy: #24385b;
+  --green: #7ec99a;
+  --green-dark: #24385b;
+  --green-soft: #e8f7ee;
+  --red: #e56b9a;
+  --red-soft: #fde8f1;
+  --gold: #ffd166;
+  --gold-soft: #fff4d0;
+  --ink: #24385b;
+  --muted: #5b6b86;
   --white: #ffffff;
-  --shadow: 0 12px 30px rgba(42, 38, 30, 0.08);
-  --shadow-lg: 0 22px 50px rgba(42, 38, 30, 0.14);
-  --radius: 0.85rem;
+  --shadow: 0 12px 32px rgba(36, 56, 91, 0.1);
+  --shadow-lg: 0 22px 50px rgba(36, 56, 91, 0.16);
+  --radius: 1.15rem;
   --header-h: 88px;
-  --font-display: "Outfit", "Source Sans 3", system-ui, sans-serif;
-  --font-body: "Source Sans 3", system-ui, sans-serif;
+  --font-display: "Baloo 2", "Outfit", system-ui, sans-serif;
+  --font-body: "Nunito", "Source Sans 3", system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --wa: 918329818881;
 }
 
 *,

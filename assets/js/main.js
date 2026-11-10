@@ -66,7 +66,7 @@
     });
   });
 
-  const filterButtons = document.querySelectorAll(".gallery-filters .filter-btn");
+  const filterButtons = document.querySelectorAll(".gallery-filters .filter-btn[data-filter]");
   const galleryCols = document.querySelectorAll(".gallery-grid .gallery-col");
   const galleryEmpty = document.querySelector(".gallery-empty");
 
@@ -115,8 +115,11 @@
     applyGalleryFilter(fromHash || "all", false);
   }
 
-  const galleryCards = [...document.querySelectorAll(".gallery-grid .gallery-card")];
-  if (galleryCards.length) {
+  const bindLightbox = () => {
+    const grid = document.querySelector(".gallery-grid");
+    if (!grid || grid.dataset.lightboxBound) return;
+    grid.dataset.lightboxBound = "true";
+
     const lightbox = document.createElement("div");
     lightbox.className = "lightbox";
     lightbox.setAttribute("role", "dialog");
@@ -135,11 +138,12 @@
     const captionEl = lightbox.querySelector(".lightbox-caption");
     let index = 0;
     let lastFocus = null;
+    let touchX = 0;
 
     const visibleCards = () =>
-      galleryCards.filter((card) => {
+      [...grid.querySelectorAll(".gallery-card")].filter((card) => {
         const col = card.closest(".gallery-col");
-        return col && !col.classList.contains("is-hidden") && !col.classList.contains("d-none");
+        return !col || (!col.classList.contains("is-hidden") && !col.classList.contains("d-none"));
       });
 
     const show = (i) => {
@@ -167,18 +171,19 @@
       if (lastFocus && lastFocus.focus) lastFocus.focus();
     };
 
-    galleryCards.forEach((card, i) => {
-      card.addEventListener("click", (event) => {
+    grid.addEventListener("click", (event) => {
+      const card = event.target.closest(".gallery-card");
+      if (!card || !grid.contains(card)) return;
+      event.preventDefault();
+      open(visibleCards().indexOf(card));
+    });
+    grid.addEventListener("keydown", (event) => {
+      const card = event.target.closest(".gallery-card");
+      if (!card) return;
+      if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        const cards = visibleCards();
-        open(cards.indexOf(card) === -1 ? i : cards.indexOf(card));
-      });
-      card.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          card.click();
-        }
-      });
+        card.click();
+      }
     });
 
     lightbox.querySelector(".lightbox-close").addEventListener("click", close);
@@ -187,6 +192,14 @@
     lightbox.addEventListener("click", (event) => {
       if (event.target === lightbox) close();
     });
+    lightbox.addEventListener("touchstart", (event) => {
+      touchX = event.changedTouches[0].clientX;
+    }, { passive: true });
+    lightbox.addEventListener("touchend", (event) => {
+      const dx = event.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) < 40) return;
+      show(index + (dx < 0 ? 1 : -1));
+    }, { passive: true });
 
     document.addEventListener("keydown", (event) => {
       if (!lightbox.classList.contains("is-open")) return;
@@ -194,16 +207,147 @@
       if (event.key === "ArrowLeft") show(index - 1);
       if (event.key === "ArrowRight") show(index + 1);
     });
-  }
+  };
+  bindLightbox();
 
   const form = document.querySelector(".enquiry-form");
   if (form) {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!form.reportValidity()) return;
-      form.classList.add("d-none");
+      const parent = (form.querySelector("[name='parent']") || {}).value || "";
+      const child = (form.querySelector("[name='child']") || {}).value || "";
+      const age = (form.querySelector("[name='age']") || {}).value || "";
+      const klass = (form.querySelector("[name='klass']") || {}).value || "";
+      const phone = (form.querySelector("[name='phone']") || {}).value || "";
+      const msg = (form.querySelector("[name='msg']") || {}).value || "";
+      const text = [
+        "Hello Jingle Bells, I would like to enquire about admission.",
+        `Parent: ${parent}`,
+        child ? `Child: ${child}` : "",
+        age ? `Age: ${age}` : "",
+        `Class: ${klass}`,
+        `Mobile: ${phone}`,
+        msg ? `Message: ${msg}` : ""
+      ].filter(Boolean).join("\n");
+      window.open(`https://wa.me/918329818881?text=${encodeURIComponent(text)}`, "_blank", "noopener");
       const success = document.querySelector(".form-success");
-      if (success) success.classList.add("is-shown");
+      if (success) {
+        success.classList.add("is-shown");
+        success.textContent = "WhatsApp is opening with your enquiry. If it does not open, message 8329818881 directly.";
+      }
     });
+  }
+
+  const yearEls = document.querySelectorAll("[data-year]");
+  yearEls.forEach((el) => { el.textContent = String(new Date().getFullYear()); });
+
+  const moments = document.querySelector(".moments-line");
+  if (moments) {
+    const lines = JSON.parse(moments.dataset.lines || "[]");
+    let i = 0;
+    const show = () => {
+      if (!lines.length) return;
+      moments.classList.remove("is-on", "is-final");
+      window.setTimeout(() => {
+        moments.textContent = lines[i];
+        if (i === lines.length - 1) moments.classList.add("is-final");
+        moments.classList.add("is-on");
+        i = (i + 1) % lines.length;
+      }, reduceMotion ? 0 : 280);
+    };
+    show();
+    if (!reduceMotion) window.setInterval(show, 3200);
+    else moments.textContent = lines[lines.length - 1] || moments.textContent;
+  }
+
+  const eventGrid = document.querySelector("[data-event-grid]");
+  if (eventGrid && window.JB_EVENTS) {
+    const filters = document.querySelectorAll("[data-event-filter]");
+    const render = (cat) => {
+      filters.forEach((btn) => {
+        const on = btn.dataset.eventFilter === cat;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      const showExtra = eventGrid.dataset.includeExtra === "true";
+      eventGrid.innerHTML = window.JB_EVENTS.filter((ev) => (showExtra || !ev.extra) && (cat === "all" || ev.category === cat))
+        .map((ev) => {
+          const has = ev.photos && ev.photos.length;
+          const href = has && ev.href ? ev.href : (has ? `gallery.html#${ev.id}` : ev.href);
+          const img = ev.cover
+            ? `<img src="${ev.cover}" alt="${ev.title} at Jingle Bells" loading="lazy">`
+            : "";
+          const note = has ? "" : `<p class="placeholder-note mb-0">Add photos in ${ev.placeholderFolder || "assets/events/" + ev.id + "/"}</p>`;
+          return `<div class="col-md-6 col-lg-4">
+            <a class="event-mosaic theme-${ev.theme} ${has ? "" : "is-placeholder"} reveal is-visible" href="${href}" data-event-id="${ev.id}">
+              ${img}
+              <div class="body">
+                <h3>${ev.title}</h3>
+                <p>${ev.description}</p>
+                ${note}
+              </div>
+            </a>
+          </div>`;
+        }).join("");
+    };
+    filters.forEach((btn) => btn.addEventListener("click", () => render(btn.dataset.eventFilter)));
+    render("all");
+  }
+
+  const album = document.querySelector("[data-event-album]");
+  if (album && window.JB_EVENTS) {
+    const id = decodeURIComponent((location.hash || "").replace("#", ""));
+    const ev = window.JB_EVENTS.find((e) => e.id === id);
+    const heading = document.querySelector("[data-event-heading]");
+    const intro = document.querySelector("[data-event-intro]");
+    if (ev && ev.photos && ev.photos.length) {
+      if (heading) heading.textContent = ev.title;
+      if (intro) intro.textContent = ev.description;
+      album.innerHTML = ev.photos.map((photo) => `
+        <div class="col-sm-6 col-lg-4 gallery-col">
+          <a class="gallery-card reveal is-visible" href="#" data-caption="${ev.title}" tabindex="0">
+            <img src="${photo.src}" alt="${photo.alt}" loading="lazy">
+            <span class="gallery-overlay">${ev.title}</span>
+          </a>
+        </div>`).join("");
+      album.classList.add("gallery-grid");
+      bindLightbox();
+    } else if (ev && heading) {
+      heading.textContent = ev.title;
+      if (intro) intro.textContent = `Add photographs to ${ev.placeholderFolder || "assets/events/" + ev.id + "/"} then list them in assets/js/events-data.js.`;
+    }
+  }
+
+  const learn = document.querySelector("[data-learn]");
+  if (learn) {
+    const games = {
+      abc: { prompt: "Tap the letter A", options: ["A", "M", "S", "B"], answer: "A" },
+      count: { prompt: "How many stars? ★ ★ ★", options: ["2", "3", "5", "4"], answer: "3" },
+      shapes: { prompt: "Which one is a circle?", options: ["▲", "■", "●", "★"], answer: "●" },
+      colours: { prompt: "Which colour is the sky?", options: ["Blue", "Red", "Black", "Brown"], answer: "Blue" },
+      nature: { prompt: "Which one is a fruit?", options: ["Carrot", "Mango", "Leaf", "Stone"], answer: "Mango" },
+      animals: { prompt: "Which one can fly?", options: ["Fish", "Cow", "Sparrow", "Frog"], answer: "Sparrow" }
+    };
+    const promptEl = learn.querySelector("[data-learn-prompt]");
+    const board = learn.querySelector("[data-learn-board]");
+    const feedback = learn.querySelector("[data-learn-feedback]");
+    const load = (key) => {
+      const game = games[key] || games.abc;
+      promptEl.textContent = game.prompt;
+      feedback.textContent = "";
+      board.innerHTML = game.options.map((opt) => `<button type="button" class="learn-chip" data-val="${opt}">${opt}</button>`).join("");
+      board.querySelectorAll(".learn-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const ok = chip.dataset.val === game.answer;
+          chip.classList.add(ok ? "is-right" : "is-wrong");
+          feedback.textContent = ok ? "Well done!" : "Try again — you can do it!";
+        });
+      });
+    };
+    learn.querySelectorAll("[data-learn-game]").forEach((btn) => {
+      btn.addEventListener("click", () => load(btn.dataset.learnGame));
+    });
+    load("abc");
   }
 })();
