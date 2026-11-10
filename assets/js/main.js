@@ -245,20 +245,65 @@
   const moments = document.querySelector(".moments-line");
   if (moments) {
     const lines = JSON.parse(moments.dataset.lines || "[]");
-    let i = 0;
-    const show = () => {
-      if (!lines.length) return;
-      moments.classList.remove("is-on", "is-final");
-      window.setTimeout(() => {
-        moments.textContent = lines[i];
-        if (i === lines.length - 1) moments.classList.add("is-final");
-        moments.classList.add("is-on");
-        i = (i + 1) % lines.length;
-      }, reduceMotion ? 0 : 280);
+    let lineIndex = 0;
+    let timer = 0;
+    const later = (fn, ms) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(fn, ms);
     };
-    show();
-    if (!reduceMotion) window.setInterval(show, 3200);
-    else moments.textContent = lines[lines.length - 1] || moments.textContent;
+
+    const paintLine = (text, revealCount) => {
+      const words = text.split(/\s+/).filter(Boolean);
+      moments.replaceChildren();
+      words.forEach((word, idx) => {
+        const span = document.createElement("span");
+        span.className = "moments-word" + (idx < revealCount ? " is-in" : "");
+        span.textContent = word;
+        moments.appendChild(span);
+      });
+      const caret = document.createElement("span");
+      caret.className = "moments-caret";
+      caret.setAttribute("aria-hidden", "true");
+      moments.appendChild(caret);
+    };
+
+    const playLine = () => {
+      if (!lines.length) return;
+      const text = lines[lineIndex];
+      const words = text.split(/\s+/).filter(Boolean);
+      moments.classList.toggle("is-final", lineIndex === lines.length - 1);
+      moments.classList.add("is-on");
+
+      if (reduceMotion) {
+        paintLine(text, words.length);
+        later(() => {
+          lineIndex = (lineIndex + 1) % lines.length;
+          playLine();
+        }, 3200);
+        return;
+      }
+
+      let shown = 0;
+      const tick = () => {
+        shown += 1;
+        paintLine(text, shown);
+        if (shown < words.length) {
+          later(tick, 320);
+        } else {
+          later(() => {
+            moments.classList.remove("is-on");
+            later(() => {
+              lineIndex = (lineIndex + 1) % lines.length;
+              playLine();
+            }, 420);
+          }, 1600);
+        }
+      };
+      paintLine(text, 0);
+      later(tick, 80);
+    };
+
+    playLine();
   }
 
   const eventGrid = document.querySelector("[data-event-grid]");
