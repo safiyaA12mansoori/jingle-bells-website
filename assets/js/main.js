@@ -45,10 +45,17 @@
     ".class-fun-card h3",
     ".class-fun-card .age",
     ".event-mosaic h3",
+    ".event-mosaic p",
     ".filter-btn",
     ".motto-chip",
     ".info-tile h2",
+    ".info-tile p",
     ".page-hero p",
+    ".feature-tile p",
+    ".class-fun-card p",
+    ".activity-tile p",
+    ".section p",
+    ".cta-band p",
     ".course-heading",
     ".course-sub"
   ].join(",");
@@ -100,17 +107,38 @@
     [...el.childNodes].forEach(process);
   };
 
+  const canPlayLetters = (el) => {
+    const reveal = el.closest(".reveal");
+    if (reveal && !reveal.classList.contains("is-visible")) return false;
+    const r = el.getBoundingClientRect();
+    return r.bottom > 48 && r.top < window.innerHeight - 24;
+  };
+
+  const playLetters = (el) => {
+    if (!el || el.classList.contains("is-letters-on")) return;
+    if (!canPlayLetters(el)) return;
+    el.classList.add("is-letters-on");
+  };
+
+  const playLettersIn = (root) => {
+    if (!root) return;
+    if (root.dataset && root.dataset.letters === "on") playLetters(root);
+    if (root.querySelectorAll) {
+      root.querySelectorAll("[data-letters='on']").forEach(playLetters);
+    }
+  };
+
   const letterIo = reduceMotion
     ? null
     : new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
-          entry.target.classList.add("is-letters-on");
-          letterIo.unobserve(entry.target);
+          playLetters(entry.target);
+          if (entry.target.classList.contains("is-letters-on")) letterIo.unobserve(entry.target);
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
+      { threshold: 0.01, rootMargin: "0px 0px -48px 0px" }
     );
 
   const applyLetterPop = (root = document) => {
@@ -119,6 +147,7 @@
       wrapLetters(el);
       if (letterIo) letterIo.observe(el);
       else el.classList.add("is-letters-on");
+      playLetters(el);
     });
   };
 
@@ -127,8 +156,14 @@
     if (!header) return;
     header.classList.toggle("is-scrolled", window.scrollY > 12);
   };
+  const onScrollLetters = () => {
+    document.querySelectorAll("[data-letters='on']:not(.is-letters-on)").forEach(playLetters);
+  };
   onScroll();
-  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("scroll", () => {
+    onScroll();
+    onScrollLetters();
+  }, { passive: true });
 
   if (!reduceMotion) {
     const reveals = document.querySelectorAll(".reveal");
@@ -137,6 +172,7 @@
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           entry.target.classList.add("is-visible");
+          window.setTimeout(() => playLettersIn(entry.target), 80);
           io.unobserve(entry.target);
         });
       },
@@ -500,10 +536,8 @@
     load("abc");
   }
 
-  window.setTimeout(() => applyLetterPop(), reduceMotion ? 0 : 420);
   window.setTimeout(() => {
-    document.querySelectorAll("[data-letters='on']:not(.is-letters-on)").forEach((el) => {
-      el.classList.add("is-letters-on");
-    });
-  }, 2800);
+    applyLetterPop();
+    onScrollLetters();
+  }, reduceMotion ? 0 : 480);
 })();

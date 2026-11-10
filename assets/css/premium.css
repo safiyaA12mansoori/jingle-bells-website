@@ -111,7 +111,7 @@
 
 .class-fun-card {
   text-align: center;
-  overflow: hidden;
+  overflow: visible;
 }
 .class-fun-card .thumb {
   width: 100%;
@@ -337,6 +337,10 @@
   opacity: 0;
   transform: scale(0.35) translateY(8px);
 }
+.reveal:not(.is-visible) .letter-pop {
+  animation: none !important;
+  opacity: 0;
+}
 .is-letters-on .letter-pop {
   animation: momentPop 0.36s var(--ease) forwards;
   animation-delay: calc(var(--i, 0) * 48ms);
@@ -344,6 +348,10 @@
 .letter-space {
   display: inline-block;
   width: 0.28em;
+}
+.feature-tile,
+.activity-tile {
+  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
